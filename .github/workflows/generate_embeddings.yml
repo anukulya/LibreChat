@@ -1,11 +1,11 @@
-name: 'generate_embeddings'
+name: "generate_embeddings"
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - 'docs/**'
+  # push:
+  #   branches:
+  #     - main
+  #   paths:
+  #     - 'docs/**'
 
 jobs:
   generate:
@@ -17,4 +17,4 @@ jobs:
           supabase-url: ${{ secrets.SUPABASE_URL }}
           supabase-service-role-key: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           openai-key: ${{ secrets.OPENAI_DOC_EMBEDDINGS_KEY }}
-          docs-root-path: 'docs'
+          docs-root-path: "docs"

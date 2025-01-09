@@ -1,0 +1,129 @@
+name: "Azure - Librechat Create Azure Resources"
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  IMAGE_NAME: "librechat:custom-${{ github.sha }}"
+
+jobs:
+  build-and-deploy:
+    name: "librechat-create-azure-resources"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        continue-on-error: false
+
+      - name: Check and Create Log Analytics Workspace
+        id: create_log_workspace
+        uses: Azure/cli@v2.1.0
+        with:
+          azcliversion: latest
+          inlineScript: |
+            # Check if workspace exists
+            if ! az monitor log-analytics workspace show --resource-group "${{ vars.RESOURCE_GROUP }}" --workspace-name "${{ vars.LOG_WORKSPACE_NAME }}" &>/dev/null; then
+              echo "Creating Log Analytics Workspace..."
+              az monitor log-analytics workspace create \
+                --resource-group "${{ vars.RESOURCE_GROUP }}" \
+                --workspace-name "${{ vars.LOG_WORKSPACE_NAME }}" \
+                --location "${{ vars.LOCATION }}" \
+                --retention-time "30" \
+                --sku "PerGB2018"
+            else
+              echo "Log Analytics Workspace already exists"
+            fi
+
+            # Get the workspace ID
+            WORKSPACE_ID=$(az monitor log-analytics workspace show \
+              --resource-group "${{ vars.RESOURCE_GROUP }}" \
+              --workspace-name "${{ vars.LOG_WORKSPACE_NAME }}" \
+              --query customerId -o tsv)
+
+            # Get the workspace Key
+            WORKSPACE_KEY=$(az monitor log-analytics workspace get-shared-keys \
+              --resource-group "${{ vars.RESOURCE_GROUP }}" \
+              --workspace-name "${{ vars.LOG_WORKSPACE_NAME }}" \
+              --query primarySharedKey -o tsv)
+
+            # Update Github environment
+            echo "WORKSPACE_ID=$WORKSPACE_ID" >> $GITHUB_ENV
+            echo "WORKSPACE_KEY=$WORKSPACE_KEY" >> $GITHUB_ENV
+
+      - name: Check and Create container app environment
+        uses: Azure/cli@v2.1.0
+        with:
+          azcliversion: latest
+          inlineScript: |
+            # Check if container app environment exists
+            if ! az containerapp env show --name "${{ vars.ACA_ENVIRONMENT_NAME }}" --resource-group "${{ vars.RESOURCE_GROUP }}" &>/dev/null; then
+              echo "Creating Container App Environment..."
+              az containerapp env create --name "${{ vars.ACA_ENVIRONMENT_NAME }}" \
+                --resource-group "${{ vars.RESOURCE_GROUP }}" \
+                --location "${{ vars.LOCATION }}" \
+                --logs-destination "log-analytics" \
+                --logs-workspace-id "$WORKSPACE_ID" \
+                --logs-workspace-key "$WORKSPACE_KEY"
+            else
+              echo "Container App Environment already exists"
+            fi
+
+      - name: Build image for container app
+        uses: Azure/cli@v2.1.0
+        with:
+          azcliversion: latest
+          inlineScript: |
+            az acr build \
+            --registry "${{ vars.SHARED_AZURE_CONTAINER_REGISTRY }}" \
+            --image "${{ env.IMAGE_NAME }}" \
+            "https://github.com/chengaiahsc/msdocs-python-fastapi-webapp-quickstart.git"
+
+      - name: Check and Create container app
+        uses: Azure/cli@v2.1.0
+        with:
+          azcliversion: latest
+          inlineScript: |
+            # Check if container app exists
+            if ! az containerapp show \
+              --name "${{ vars.ACA_APP_NAME }}" \
+              --resource-group "${{ vars.RESOURCE_GROUP }}" > /dev/null 2>&1
+            then
+              echo "Creating Container App Job..."
+              az containerapp create \
+                --name "${{ vars.ACA_APP_NAME }}" \
+                --resource-group "${{ vars.RESOURCE_GROUP }}" \
+                --environment "${{ vars.ACA_ENVIRONMENT_NAME }}" \
+                --image "${{ vars.SHARED_AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.IMAGE_NAME }}" \
+                --registry-server "${{ vars.SHARED_AZURE_CONTAINER_REGISTRY }}.azurecr.io" \
+                --registry-identity "${{ vars.MANAGED_IDENTITY_REGISTRY }}" \
+                --scale-rule-name librechat-http-rule \
+                --scale-rule-http-concurrency 15 \
+                --min-replicas 0 \
+                --max-replicas 10 \
+                --ingress external \
+                --target-port 8000 \
+                --secrets "mongo-uri=${{ secrets.MONGO_URI }}" \
+                  "creds-key=${{ secrets.CREDS_KEY }}" \
+                  "creds-iv=${{ secrets.CREDS_IV }}" \
+                  "jwt-secret=${{ secrets.JWT_SECRET }}" \
+                  "jwt-refresh-secret=${{ secrets.JWT_REFRESH_SECRET }}" \
+                --cpu "0.5" \
+                --memory "1.0Gi" \
+                --env-vars \
+                  "TEST_VAR_1=${{ vars.RESOURCE_GROUP }}" \
+                  "TEST_VAR_2=secretref:creds-key" 
+                  
+            else
+              echo "Container App already exists"
+            fi
