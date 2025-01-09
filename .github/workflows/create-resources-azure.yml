@@ -121,10 +121,44 @@ jobs:
                 --resource-group "${{ vars.RESOURCE_GROUP }}" \
                 --storage-account "${{ vars.STORAGE_ACCOUNT_NAME }}" \
                 --enabled-protocols "SMB" \
-                --access-tier "Hot" \
+                --access-tier "Cool" \
                 --quota "1"
             else
               echo "Azure File Share already exists"
+            fi
+
+      - name: Check and Link Azure File Share to Container App Environment
+        uses: Azure/cli@v2.1.0
+        with:
+          azcliversion: latest
+          inlineScript: |
+            # Check if the Azure File Share is linked to the Container App Environment
+            echo "Checking if Azure File Share is linked to the Container App Environment..."
+            current_links=$(az containerapp env storage show \
+              --name "${{ vars.ACA_ENVIRONMENT_NAME }}" \
+              --resource-group "${{ vars.RESOURCE_GROUP }}" \
+              --query "[?storageName=='${{ vars.STORAGE_MOUNT_NAME }}'].{shareName:azureFileShareName}" \
+              --output tsv)
+
+            if [ "$current_links" != "${{ vars.FILE_SHARE_NAME }}" ]; then
+              echo "Linking Azure File Share to Container App Environment..."
+
+              # Fetch the primary storage account key
+              STORAGE_ACCOUNT_KEY=$(az storage account keys list \
+                --resource-group "${{ vars.RESOURCE_GROUP }}" \
+                --account-name "${{ vars.STORAGE_ACCOUNT_NAME }}" \
+                --query "[0].value" -o tsv)
+
+              az containerapp env storage set \
+                --access-mode ReadWrite \
+                --azure-file-account-name "${{ vars.STORAGE_ACCOUNT_NAME }}" \
+                --azure-file-account-key $STORAGE_ACCOUNT_KEY \
+                --azure-file-share-name "${{ vars.FILE_SHARE_NAME }}" \
+                --storage-name "${{ vars.STORAGE_MOUNT_NAME }}" \
+                --name "${{ vars.ACA_ENVIRONMENT_NAME }}" \
+                --resource-group "${{ vars.RESOURCE_GROUP }}"
+            else
+              echo "Azure File Share is already linked to the Container App Environment."
             fi
 
       - name: Check and Create container app
