@@ -133,14 +133,7 @@ jobs:
           azcliversion: latest
           inlineScript: |
             # Check if the Azure File Share is linked to the Container App Environment
-            echo "Checking if Azure File Share is linked to the Container App Environment..."
-            current_links=$(az containerapp env storage show \
-              --name "${{ vars.ACA_ENVIRONMENT_NAME }}" \
-              --resource-group "${{ vars.RESOURCE_GROUP }}" \
-              --query "[?storageName=='${{ vars.STORAGE_MOUNT_NAME }}'].{shareName:azureFileShareName}" \
-              --output tsv)
-
-            if [ "$current_links" != "${{ vars.FILE_SHARE_NAME }}" ]; then
+            if ! az containerapp env storage show --name "${{ vars.ACA_ENVIRONMENT_NAME }}" --resource-group "${{ vars.RESOURCE_GROUP }}" --storage-name "${{ vars.STORAGE_MOUNT_NAME }}" &>/dev/null; then
               echo "Linking Azure File Share to Container App Environment..."
 
               # Fetch the primary storage account key
