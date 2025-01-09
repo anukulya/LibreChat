@@ -1,3 +1,4 @@
+# https://learn.microsoft.com/en-us/azure/container-apps/storage-mounts-azure-files?tabs=bash
 name: "Azure - Librechat Create Azure Resources"
 on:
   workflow_dispatch:
