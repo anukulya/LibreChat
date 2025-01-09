@@ -80,7 +80,7 @@ jobs:
             fi
 
       - name: Build image for container app
-        if: ${{ vars.BUILD_IMAGE }}
+        if: ${{ vars.BUILD_IMAGE == 'true' }}
         uses: Azure/cli@v2.1.0
         with:
           azcliversion: latest
@@ -96,7 +96,7 @@ jobs:
           azcliversion: latest
           inlineScript: |
             # Check if storage account exists
-            if ! az storage account show --name "$STORAGE_ACCOUNT_NAME" --resource-group "${{ vars.RESOURCE_GROUP }}" &>/dev/null; then
+            if ! az storage account show --name "${{ vars.STORAGE_ACCOUNT_NAME }}" --resource-group "${{ vars.RESOURCE_GROUP }}" &>/dev/null; then
               echo "Creating Storage Account..."
               az storage account create \
                 --name "${{ vars.STORAGE_ACCOUNT_NAME }}" \
