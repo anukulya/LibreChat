@@ -108,6 +108,22 @@ jobs:
               echo "Storage Account already exists"
             fi
 
+      - name: Check and Create Azure File Share
+        uses: Azure/cli@v2.1.0
+        with:
+          azcliversion: latest
+          inlineScript: |
+            # Check if file share exists
+            if ! az storage share show --name "${{ vars.FILE_SHARE_NAME }}" --account-name "${{ vars.STORAGE_ACCOUNT_NAME }}" &>/dev/null; then
+              echo "Creating Azure File Share..."
+              az storage share create \
+                --name "${{ vars.FILE_SHARE_NAME }}" \
+                --account-name "${{ vars.STORAGE_ACCOUNT_NAME }}" \
+                --quota 1 # Setting the quota to 1GB, which is the minimum
+            else
+              echo "Azure File Share already exists"
+            fi
+
       - name: Check and Create container app
         uses: Azure/cli@v2.1.0
         with:
