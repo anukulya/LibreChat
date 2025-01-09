@@ -114,11 +114,13 @@ jobs:
           azcliversion: latest
           inlineScript: |
             # Check if file share exists
-            if ! az storage share show --name "${{ vars.FILE_SHARE_NAME }}" --account-name "${{ vars.STORAGE_ACCOUNT_NAME }}" &>/dev/null; then
+            if ! az storage share-rm show --name "${{ vars.FILE_SHARE_NAME }}" --resource-group "${{ vars.RESOURCE_GROUP }}" --storage-account "${{ vars.STORAGE_ACCOUNT_NAME }}" &>/dev/null; then
               echo "Creating Azure File Share..."
-              az storage share create \
+              az storage share-rm create \
                 --name "${{ vars.FILE_SHARE_NAME }}" \
-                --account-name "${{ vars.STORAGE_ACCOUNT_NAME }}" \
+                --resource-group "${{ vars.RESOURCE_GROUP }}" \
+                --storage-account "${{ vars.STORAGE_ACCOUNT_NAME }}" \
+                --enabled-protocols SMB \
                 --quota 1 # Setting the quota to 1GB, which is the minimum
             else
               echo "Azure File Share already exists"
