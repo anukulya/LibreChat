@@ -120,8 +120,8 @@ jobs:
                 --name "${{ vars.FILE_SHARE_NAME }}" \
                 --resource-group "${{ vars.RESOURCE_GROUP }}" \
                 --storage-account "${{ vars.STORAGE_ACCOUNT_NAME }}" \
-                --enabled-protocols SMB \
-                --quota 1 # Setting the quota to 1GB, which is the minimum
+                --enabled-protocols "SMB" \
+                --quota "1"
             else
               echo "Azure File Share already exists"
             fi
