@@ -121,6 +121,7 @@ jobs:
                 --resource-group "${{ vars.RESOURCE_GROUP }}" \
                 --storage-account "${{ vars.STORAGE_ACCOUNT_NAME }}" \
                 --enabled-protocols "SMB" \
+                --access-tier "Hot" \
                 --quota "1"
             else
               echo "Azure File Share already exists"
