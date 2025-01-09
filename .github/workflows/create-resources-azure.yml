@@ -80,6 +80,7 @@ jobs:
             fi
 
       - name: Build image for container app
+        if: ${{ vars.BUILD_IMAGE }}
         uses: Azure/cli@v2.1.0
         with:
           azcliversion: latest
@@ -88,6 +89,24 @@ jobs:
             --registry "${{ vars.SHARED_AZURE_CONTAINER_REGISTRY }}" \
             --image "${{ env.IMAGE_NAME }}" \
             "https://github.com/chengaiahsc/msdocs-python-fastapi-webapp-quickstart.git"
+
+      - name: Check and Create Storage Account
+        uses: Azure/cli@v2.1.0
+        with:
+          azcliversion: latest
+          inlineScript: |
+            # Check if storage account exists
+            if ! az storage account show --name "$STORAGE_ACCOUNT_NAME" --resource-group "${{ vars.RESOURCE_GROUP }}" &>/dev/null; then
+              echo "Creating Storage Account..."
+              az storage account create \
+                --name "${{ vars.STORAGE_ACCOUNT_NAME }}" \
+                --resource-group "${{ vars.RESOURCE_GROUP }}" \
+                --location "${{ vars.LOCATION }}" \
+                --sku Standard_LRS \
+                --kind StorageV2
+            else
+              echo "Storage Account already exists"
+            fi
 
       - name: Check and Create container app
         uses: Azure/cli@v2.1.0
