@@ -133,8 +133,7 @@ jobs:
         with:
           azcliversion: latest
           inlineScript: |
-
-            echo "${{ vars.CONFIG_YAML }}" > librechat.yaml
+            printf "%s" "${{ vars.CONFIG_YAML }}" > librechat.yaml
 
             # Fetch the primary storage account key
             STORAGE_ACCOUNT_KEY=$(az storage account keys list \
