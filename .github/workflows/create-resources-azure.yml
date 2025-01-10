@@ -220,7 +220,7 @@ jobs:
                 --min-replicas 0 \
                 --max-replicas 10 \
                 --ingress external \
-                --target-port 8000 \
+                --target-port 3080 \
                 --secrets "mongo-uri=${{ secrets.MONGO_URI }}" \
                   "creds-key=${{ secrets.CREDS_KEY }}" \
                   "creds-iv=${{ secrets.CREDS_IV }}" \
@@ -250,6 +250,10 @@ jobs:
             --name "${{ vars.ACA_APP_NAME }}" \
             --resource-group "${{ vars.RESOURCE_GROUP }}" \
             --output yaml > container_app_config.yaml
+
+      - name: Set Permissions for container_app_config.yaml
+        run: |
+          pwd && ls -al container_app_config.yaml && chmod 644 container_app_config.yaml
 
       # https://github.com/fjogeleit/yaml-update-action/?tab=readme-ov-file#multi-value-changes
       - name: Update container app configuration with the volume mount.
