@@ -253,12 +253,8 @@ jobs:
             --resource-group "${{ vars.RESOURCE_GROUP }}" \
             --output yaml > container_app_config.yaml
 
-            # Change the ownership of the files from root to runner account.
+            # Provide read/write access for the following actions to access the file.
             chmod 666 container_app_config.yaml
-
-      - name: Set Permissions for container_app_config.yaml
-        run: |
-          pwd && ls -al
 
       # https://github.com/fjogeleit/yaml-update-action/?tab=readme-ov-file#multi-value-changes
       - name: Update container app configuration with the volume mount.
@@ -290,4 +286,7 @@ jobs:
         with:
           azcliversion: latest
           inlineScript: |
-            cat container_app_config.yaml
+            az containerapp update \
+            --name "${{ vars.ACA_APP_NAME }}" \
+            --resource-group "${{ vars.RESOURCE_GROUP }}" 
+            --yaml container_app_config.yaml --output table
