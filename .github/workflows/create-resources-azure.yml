@@ -253,7 +253,7 @@ jobs:
 
       - name: Set Permissions for container_app_config.yaml
         run: |
-          pwd && ls -al container_app_config.yaml && chmod 644 container_app_config.yaml
+          pwd && ls -al && chmod 644 container_app_config.yaml
 
       # https://github.com/fjogeleit/yaml-update-action/?tab=readme-ov-file#multi-value-changes
       - name: Update container app configuration with the volume mount.
