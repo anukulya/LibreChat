@@ -249,23 +249,23 @@ jobs:
         with:
           valueFile: "container_app_config.yaml"
           commitChange: false
-          method: createOrUpdate
-          workDir: "."
           changes: |
             {
-              "properties.template.volumes": [
-                {
-                  "name": "librechat-config",
-                  "storageType": "AzureFile",
-                  "storageName": "librechat-storage-mount"
-                }
-              ],
-              "properties.template.containers[0].volumeMounts": [
-                {
-                  "volumeName": "librechat-config",
-                  "mountPath": "/mnt"
-                }
-              ]
+              "container_app_config.yaml": {
+                "properties.template.volumes": [
+                  {
+                    "name": "librechat-config",
+                    "storageType": "AzureFile",
+                    "storageName": "librechat-storage-mount"
+                  }
+                ],
+                "properties.template.containers[0].volumeMounts": [
+                  {
+                    "volumeName": "librechat-config",
+                    "mountPath": "/mnt"
+                  }
+                ]
+              }
             }
 
       - name: Update Container app
@@ -273,4 +273,4 @@ jobs:
         with:
           azcliversion: latest
           inlineScript: |
-            echo ./container_app_config.yaml
+            cat container_app_config.yaml
