@@ -237,7 +237,14 @@ jobs:
                   "JWT_REFRESH_SECRET=secretref:jwt-refresh-secret" \
                   "MONGO_URI=secretref:mongo-uri" \
                   "CONFIG_PATH=${{ vars.CONFIG_PATH }}" \
-                  "NODE_EXTRA_CA_CERTS=${{ vars.NODE_EXTRA_CA_CERTS_PATH }}"
+                  "NODE_EXTRA_CA_CERTS=${{ vars.NODE_EXTRA_CA_CERTS_PATH }}" \
+                  "ALLOW_REGISTRATION=${{ vars.ALLOW_REGISTRATION }}" \
+                  "ALLOW_EMAIL_LOGIN=${{ vars.ALLOW_EMAIL_LOGIN }}" \
+                  "ALLOW_SOCIAL_LOGIN=${{ vars.ALLOW_SOCIAL_LOGIN }}" \
+                  "ALLOW_SOCIAL_REGISTRATION=${{ vars.ALLOW_SOCIAL_LOGIN }}" \
+                  "ALLOW_PASSWORD_RESET=${{ vars.ALLOW_SOCIAL_LOGIN }}" \
+                  "ALLOW_ACCOUNT_DELETION=${{ vars.ALLOW_SOCIAL_LOGIN }}" \
+                  "ALLOW_UNVERIFIED_EMAIL_LOGIN=${{ vars.ALLOW_SOCIAL_LOGIN }}"
             else
               echo "Container App already exists"
             fi
