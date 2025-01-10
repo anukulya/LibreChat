@@ -254,7 +254,7 @@ jobs:
             --output yaml > container_app_config.yaml
 
             # Change the ownership of the files from root to runner account.
-            chown runner:docker container_app_config.yaml
+            chmod 666 container_app_config.yaml
 
       - name: Set Permissions for container_app_config.yaml
         run: |
