@@ -8,8 +8,7 @@ permissions:
   contents: read
 
 env:
-  BUILD_VERSION: "v0.7.6"
-  IMAGE_NAME: "librechat:custom-${{ env.BUILD_VERSION }}" # This is the correct syntax
+  IMAGE_NAME: "librechat:custom-${{ vars.LIBRECHAT_BUILD_VERSION }}" # This is the correct syntax
 
 jobs:
   build-and-deploy:
@@ -84,7 +83,7 @@ jobs:
       - name: Clone LibreChat Repo
         if: ${{ vars.BUILD_IMAGE == 'true' }}
         run: |
-          git clone --branch ${{ env.BUILD_VERSION }} https://github.com/danny-avila/LibreChat.git LibreChat-${{ env.BUILD_VERSION }}
+          git clone --branch ${{ vars.LIBRECHAT_BUILD_VERSION }} https://github.com/danny-avila/LibreChat.git LibreChat-${{ vars.LIBRECHAT_BUILD_VERSION }}
 
       - name: Build image for container app
         if: ${{ vars.BUILD_IMAGE == 'true' }}
@@ -95,7 +94,7 @@ jobs:
             az acr build \
             --registry "${{ vars.SHARED_AZURE_CONTAINER_REGISTRY }}" \
             --image "${{ env.IMAGE_NAME }}" \
-            ./LibreChat-${{ env.BUILD_VERSION }}
+            ./LibreChat-${{ vars.LIBRECHAT_BUILD_VERSION }}
 
       - name: Check and Create Storage Account
         uses: Azure/cli@v2.1.0
