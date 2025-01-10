@@ -128,6 +128,35 @@ jobs:
               echo "Azure File Share already exists"
             fi
 
+      - name: Copy config file to Azure File Share
+        uses: Azure/cli@v2.1.0
+        with:
+          azcliversion: latest
+          inlineScript: |
+
+            echo "${{ vars.CONFIG_YAML }}" > librechat.yaml
+
+            # Fetch the primary storage account key
+            STORAGE_ACCOUNT_KEY=$(az storage account keys list \
+              --resource-group "${{ vars.RESOURCE_GROUP }}" \
+              --account-name "${{ vars.STORAGE_ACCOUNT_NAME }}" \
+              --query "[0].value" -o tsv)
+
+            # Create config directory in the file share (will not error if it already exists)
+            az storage directory create \
+              --account-name ${{ env.STORAGE_ACCOUNT_NAME }} \
+              --share-name ${{ env.FILE_SHARE_NAME }} \
+              --name "config" \
+              --account-key $STORAGE_ACCOUNT_KEY
+
+            # Upload the file to the config directory
+            az storage file upload \
+              --account-name ${{ env.STORAGE_ACCOUNT_NAME }} \
+              --share-name ${{ env.FILE_SHARE_NAME }} \
+              --source "librechat.yaml" \
+              --path "config/librechat.yaml" \
+              --account-key $STORAGE_ACCOUNT_KEY
+
       - name: Check and Link Azure File Share to Container App Environment
         uses: Azure/cli@v2.1.0
         with:
@@ -188,7 +217,8 @@ jobs:
                 --memory "1.0Gi" \
                 --env-vars \
                   "TEST_VAR_1=${{ vars.RESOURCE_GROUP }}" \
-                  "TEST_VAR_2=secretref:creds-key" 
+                  "TEST_VAR_2=secretref:creds-key" \
+                  "CONFIG_PATH=${{ vars.CONFIG_PATH }}"
                   
             else
               echo "Container App already exists"
