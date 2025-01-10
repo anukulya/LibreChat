@@ -288,5 +288,5 @@ jobs:
           inlineScript: |
             az containerapp update \
             --name "${{ vars.ACA_APP_NAME }}" \
-            --resource-group "${{ vars.RESOURCE_GROUP }}" 
+            --resource-group "${{ vars.RESOURCE_GROUP }}" \
             --yaml container_app_config.yaml --output table
