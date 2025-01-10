@@ -133,14 +133,16 @@ jobs:
               echo "Azure File Share already exists"
             fi
 
+      - name: Create Files from Variables
+        run: |
+          printf "%s" "${{ vars.CONFIG_YAML }}" > librechat.yaml
+          printf "%s" "${{ vars.IZ_GPU_SERVER_NGINX_CA_CERT_ROOT }}" > CA_CERT_ROOT.pem
+
       - name: Copy files to Azure File Share
         uses: Azure/cli@v2.1.0
         with:
           azcliversion: latest
           inlineScript: |
-            printf "%s" "${{ vars.CONFIG_YAML }}" > librechat.yaml
-            printf "%s" "${{ vars.IZ_GPU_SERVER_NGINX_CA_CERT_ROOT }}" > CA_CERT_ROOT.pem
-
             # Fetch the primary storage account key
             STORAGE_ACCOUNT_KEY=$(az storage account keys list \
               --resource-group "${{ vars.RESOURCE_GROUP }}" \
@@ -251,9 +253,12 @@ jobs:
             --resource-group "${{ vars.RESOURCE_GROUP }}" \
             --output yaml > container_app_config.yaml
 
+            # Change the ownership of the files from root to runner account.
+            chown runner:docker container_app_config.yaml
+
       - name: Set Permissions for container_app_config.yaml
         run: |
-          pwd && ls -al && chmod 644 container_app_config.yaml
+          pwd && ls -al
 
       # https://github.com/fjogeleit/yaml-update-action/?tab=readme-ov-file#multi-value-changes
       - name: Update container app configuration with the volume mount.
