@@ -241,28 +241,33 @@ jobs:
             az containerapp show \
             --name "${{ vars.ACA_APP_NAME }}" \
             --resource-group "${{ vars.RESOURCE_GROUP }}" \
-            --output yaml > container_app_config.yaml
+            --output yaml > $GITHUB_WORKSPACE/container_app_config.yaml
+
+            echo GITHUB_WORKSPACE=$GITHUB_WORKSPACE
+
+            echo $GITHUB_WORKSPACE/container_app_config.yaml
 
       - name: Update container app configuration with the volume mount.
         uses: fjogeleit/yaml-update-action@v0.16.0
         with:
           commitChange: false
           method: createOrUpdate
+          workDir: $GITHUB_WORKSPACE
           changes: |
             {
-              "filepath":"./container_app_config.yaml",
-              "properties.template.volumes":[
-                  {
-                    "name":"librechat-config",
-                    "storageType":"AzureFile",
-                    "storageName":"${{ vars.STORAGE_MOUNT_NAME }}"
-                  }
+              "filepath": "container_app_config.yaml",
+              "properties.template.volumes": [
+                {
+                  "name": "librechat-config",
+                  "storageType": "AzureFile",
+                  "storageName": "librechat-storage-mount"
+                }
               ],
-              "properties.template.containers[0].volumeMounts":[
-                  {
-                    "volumeName":"librechat-config",
-                    "mountPath":"/mnt"
-                  }
+              "properties.template.containers[0].volumeMounts": [
+                {
+                  "volumeName": "librechat-config",
+                  "mountPath": "/mnt"
+                }
               ]
             }
 
