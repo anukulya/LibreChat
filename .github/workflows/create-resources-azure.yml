@@ -144,15 +144,15 @@ jobs:
 
             # Create config directory in the file share (will not error if it already exists)
             az storage directory create \
-              --account-name ${{ env.STORAGE_ACCOUNT_NAME }} \
-              --share-name ${{ env.FILE_SHARE_NAME }} \
+              --account-name ${{ vars.STORAGE_ACCOUNT_NAME }} \
+              --share-name ${{ vars.FILE_SHARE_NAME }} \
               --name "config" \
               --account-key $STORAGE_ACCOUNT_KEY
 
             # Upload the file to the config directory
             az storage file upload \
-              --account-name ${{ env.STORAGE_ACCOUNT_NAME }} \
-              --share-name ${{ env.FILE_SHARE_NAME }} \
+              --account-name ${{ vars.STORAGE_ACCOUNT_NAME }} \
+              --share-name ${{ vars.FILE_SHARE_NAME }} \
               --source "librechat.yaml" \
               --path "config/librechat.yaml" \
               --account-key $STORAGE_ACCOUNT_KEY
