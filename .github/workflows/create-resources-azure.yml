@@ -8,7 +8,8 @@ permissions:
   contents: read
 
 env:
-  IMAGE_NAME: "librechat:custom-${{ github.sha }}"
+  BUILD_VERSION: "v0.7.6"
+  IMAGE_NAME: "librechat:custom-$BUILD_VERSION"
 
 jobs:
   build-and-deploy:
@@ -86,10 +87,12 @@ jobs:
         with:
           azcliversion: latest
           inlineScript: |
+            git clone --branch $BUILD_VERSION https://github.com/danny-avila/LibreChat.git LibreChat-$BUILD_VERSION
+
             az acr build \
             --registry "${{ vars.SHARED_AZURE_CONTAINER_REGISTRY }}" \
             --image "${{ env.IMAGE_NAME }}" \
-            "https://github.com/chengaiahsc/msdocs-python-fastapi-webapp-quickstart.git"
+            ./LibreChat-$BUILD_VERSION
 
       - name: Check and Create Storage Account
         uses: Azure/cli@v2.1.0
@@ -224,10 +227,13 @@ jobs:
                 --cpu "0.5" \
                 --memory "1.0Gi" \
                 --env-vars \
-                  "TEST_VAR_2=secretref:creds-key" \
-                  "CONFIG_PATH=${{ vars.CONFIG_PATH }}"
+                  "CREDS_IV=secretref:creds-iv" \
+                  "CREDS_KEY=secretref:creds-key" \
+                  "JWT_SECRET=secretref:jwt-secret" \
+                  "JWT_REFRESH_SECRET=secretref:jwt-refresh-secret" \
+                  "MONGO_URI=secretref:mongo-uri" \
+                  "CONFIG_PATH=${{ vars.CONFIG_PATH }}" \
                   "NODE_EXTRA_CA_CERTS=${{ vars.NODE_EXTRA_CA_CERTS_PATH }}"
-                  
             else
               echo "Container App already exists"
             fi
