@@ -246,7 +246,6 @@ jobs:
       - name: Update container app configuration with the volume mount.
         uses: fjogeleit/yaml-update-action@v0.16.0
         with:
-          valueFile: "path/to/your/file.yaml"
           commitChange: false
           method: createOrUpdate
           changes: |
