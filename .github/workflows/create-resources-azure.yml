@@ -128,12 +128,13 @@ jobs:
               echo "Azure File Share already exists"
             fi
 
-      - name: Copy config file to Azure File Share
+      - name: Copy files to Azure File Share
         uses: Azure/cli@v2.1.0
         with:
           azcliversion: latest
           inlineScript: |
             printf "%s" "${{ vars.CONFIG_YAML }}" > librechat.yaml
+            printf "%s" "${{ vars.IZ_GPU_SERVER_NGINX_CA_CERT_ROOT }}" > CA_CERT_ROOT.pem
 
             # Fetch the primary storage account key
             STORAGE_ACCOUNT_KEY=$(az storage account keys list \
@@ -148,12 +149,20 @@ jobs:
               --name "config" \
               --account-key $STORAGE_ACCOUNT_KEY
 
-            # Upload the file to the config directory
+            # Upload the app configuration file to the config directory
             az storage file upload \
               --account-name ${{ vars.STORAGE_ACCOUNT_NAME }} \
               --share-name ${{ vars.FILE_SHARE_NAME }} \
               --source "librechat.yaml" \
               --path "config/librechat.yaml" \
+              --account-key $STORAGE_ACCOUNT_KEY
+
+            # Upload the app configuration file to the config directory
+            az storage file upload \
+              --account-name ${{ vars.STORAGE_ACCOUNT_NAME }} \
+              --share-name ${{ vars.FILE_SHARE_NAME }} \
+              --source "CA_CERT_ROOT.pem" \
+              --path "config/CA_CERT_ROOT.pem" \
               --account-key $STORAGE_ACCOUNT_KEY
 
       - name: Check and Link Azure File Share to Container App Environment
@@ -215,10 +224,52 @@ jobs:
                 --cpu "0.5" \
                 --memory "1.0Gi" \
                 --env-vars \
-                  "TEST_VAR_1=${{ vars.RESOURCE_GROUP }}" \
                   "TEST_VAR_2=secretref:creds-key" \
                   "CONFIG_PATH=${{ vars.CONFIG_PATH }}"
+                  "NODE_EXTRA_CA_CERTS=${{ vars.NODE_EXTRA_CA_CERTS_PATH }}"
                   
             else
               echo "Container App already exists"
             fi
+
+      - name: Export container app configuration
+        uses: Azure/cli@v2.1.0
+        with:
+          azcliversion: latest
+          inlineScript: |
+            # Export container app configuration
+            az containerapp show \
+            --name "${{ vars.ACA_APP_NAME }}" \
+            --resource-group "${{ vars.RESOURCE_GROUP }}" \
+            --output yaml > container_app_config.yaml
+
+      - name: Update container app configuration with the volume mount.
+        uses: fjogeleit/yaml-update-action@v0.16.0
+        with:
+          valueFile: "path/to/your/file.yaml"
+          commitChange: false
+          method: createOrUpdate
+          changes: |
+            {
+              "filepath":"./container_app_config.yaml",
+              "properties.template.volumes":[
+                  {
+                    "name":"librechat-config",
+                    "storageType":"AzureFile",
+                    "storageName":"${{ vars.STORAGE_MOUNT_NAME }}"
+                  }
+              ],
+              "properties.template.containers[0].volumeMounts":[
+                  {
+                    "volumeName":"librechat-config",
+                    "mountPath":"/mnt"
+                  }
+              ]
+            }
+
+      - name: Update Container app
+        uses: Azure/cli@v2.1.0
+        with:
+          azcliversion: latest
+          inlineScript: |
+            echo ./container_app_config.yaml
